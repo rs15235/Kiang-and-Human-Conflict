@@ -1,0 +1,428 @@
+---
+title: "Figures"
+output: html_document
+date: "2024-01-03"
+---
+
+```{r}
+library(readxl)
+library(tidyverse)
+data <- read_excel("E:/GIS/Amit's Social Analytics/Cleaned_dataset.xlsx")%>%
+  mutate(Percapita_pashmina=`No. of pashmina goats`/`Total family members`)
+
+fig_data=data%>%
+  select(`No. of pashmina goats`, `Wealth rank`)%>%
+  mutate(Percapita_pashmina=`No. of pashmina goats`/`Total family members`)
+
+fig_data$FT_wealthRank=as.factor(fig_data$FT_wealthRank)
+
+# A named vector that maps numerical codes to category names
+wealthRank_labels <- setNames(
+  c("Category 2", "Moderate", "Well off", "Very well off"),
+  2:5
+)
+
+# Sample data
+#data <- data.frame(
+#  category = rep(c("A", "B", "C"), each = 20),
+#  value = c(rnorm(20, mean = 5, sd = 2), 
+#            rnorm(20, mean = 10, sd = 2), 
+#            rnorm(20, mean = 15, sd = 2))
+#)
+
+# Calculate means
+medians <- aggregate(Pashmina_goats ~ FT_wealthRank, data = fig_data, FUN = median)
+
+# Calculate counts
+counts <- as.data.frame(table(fig_data$FT_wealthRank))
+names(counts) <- c("FT_wealthRank", "count")
+
+# Create the boxplot
+ggplot(fig_data, aes(x = FT_wealthRank, y = Pashmina_goats)) +
+  geom_boxplot() + 
+  geom_point(data = medians, aes(x = FT_wealthRank, y = Pashmina_goats), color = 'red', size = 3) +
+  geom_line(data = medians, aes(x = FT_wealthRank, y = Pashmina_goats, group = 1), color = 'red') +
+  geom_text(data = counts, aes(x = FT_wealthRank,y = min(fig_data$Pashmina_goats) - 1, label = paste("n =", count)), 
+            color = 'blue', size = 3.5, vjust = 1) +
+  theme_minimal() +
+  labs(
+       x = "Family Wealth Ranks",
+       y = "Pashmina Goat Count")
+
+
+```
+
+```{r}
+cor.test(data$FT, data$total_livestock, method = "spearman")
+plot(data$FT, data$total_livestock)
+
+```
+
+```{r}
+data <- read_excel("E:/GIS/Amit's Social Analytics/Cleaned_dataset.xlsx")
+
+fig_data=data%>%
+  select(Pashmina_goats, ED)
+
+fig_data$ED=as.factor(fig_data$ED)
+
+# A named vector that maps numerical codes to category names
+#wealthRank_labels <- setNames(
+#  c("Category 2", "Moderate", "Well off", "Very well off"),
+#  2:5
+#)
+
+# Sample data
+#data <- data.frame(
+#  category = rep(c("A", "B", "C"), each = 20),
+#  value = c(rnorm(20, mean = 5, sd = 2), 
+#            rnorm(20, mean = 10, sd = 2), 
+#            rnorm(20, mean = 15, sd = 2))
+#)
+
+# Calculate means
+medians <- aggregate(Pashmina_goats ~ ED, data = fig_data, FUN = median)
+
+# Calculate counts
+counts <- as.data.frame(table(fig_data$ED))
+names(counts) <- c("ED", "count")
+
+# Create the boxplot
+ggplot(fig_data, aes(x = ED, y = Pashmina_goats)) +
+  geom_boxplot() + 
+  geom_point(data = medians, aes(x = ED, y = Pashmina_goats), color = 'red', size = 3) +
+  geom_line(data = medians, aes(x = ED, y = Pashmina_goats, group = 1), color = 'red') +
+  geom_text(data = counts, aes(x = ED,y = min(fig_data$Pashmina_goats) - 1, label = paste("n =", count)), 
+            color = 'blue', size = 3.5, vjust = 1) +
+  theme_minimal() +
+  labs(
+       x = "Education Class",
+       y = "Pashmina Goat Count")
+
+
+```
+Education Deescripency Between Males and Females
+```{r}
+# Library
+library(ggplot2)
+library(hrbrthemes)
+
+# Education VS Males
+ED_vs_M= ggplot(data, aes(x=M, y=ED)) +
+geom_point() +
+geom_smooth(method=lm , color="black", fill="skyblue", se=TRUE) +
+stat_poly_eq(use_label(c("R2", "p")))+
+xlab("No. of male members in a family ") + 
+ylab("No. of educated members in a family")
+
+# Education VS Females
+ED_vs_F=ggplot(data, aes(x=F, y=ED)) +
+geom_point() +
+geom_smooth(method=lm , color="black", fill="skyblue", se=TRUE) +
+stat_poly_eq(use_label(c("R2", "p")))+
+xlab("No. of female members in a family ") + 
+ylab("No. of educated members in a family")
+
+ggarrange(ED_vs_M,ED_vs_F, ncol = 2, nrow = 1)
+```
+Education vs Pashmina
+```{r}
+# Library
+library(ggplot2)
+library(hrbrthemes)
+
+# Education VS Pashmina Goats
+ED_vs_Pash= ggplot(data, aes(x=ED, y=Pashmina_goats)) +
+geom_point() +
+geom_smooth(method=lm , color="black", fill="skyblue", se=TRUE) +
+stat_poly_eq(use_label(c("R2", "p")))+
+ylab("No. of Pashmina Goats") + 
+xlab("No. of educated members in a family")
+
+# Education VS Total Family Numbers
+ED_vs_TFM= ggplot(data, aes(x=HH_TFM, y=ED)) +
+geom_point() +
+geom_smooth(method=lm , color="black", fill="skyblue", se=TRUE) +
+stat_poly_eq(use_label(c("R2", "p")))+
+xlab("Total members in a family") + 
+ylab("No. of educated members in a family")
+
+#Education vs Percapita Pashmina goats
+ED_vs_percapita_pashmina= ggplot(data, aes(x=ED ,y=Percapita_pashmina)) +
+geom_point() +
+geom_smooth(method=lm , color="black", fill="skyblue", se=TRUE) +
+stat_poly_eq(use_label(c("R2", "p")))+
+ylab("No. of Pashmina goats per family member ") + 
+xlab("No. of educated members in a family")
+
+#Total Family members vs Pashmina goats
+TFM_vs_pashmina= ggplot(data, aes(x=HH_TFM ,y=Pashmina_goats)) +
+geom_point() +
+geom_smooth(method=lm , color="black", fill="skyblue", se=TRUE) +
+stat_poly_eq(use_label(c("R2", "p")))+
+ylab("No. of Pashmina goats") + 
+xlab("Total members in a family")
+
+ggarrange(ED_vs_Pash,ED_vs_TFM,ED_vs_percapita_pashmina, TFM_vs_pashmina,ncol = 4, nrow = 1)
+```
+Wealth vs Pashmina
+```{r}
+# Library
+library(ggplot2)
+library(hrbrthemes)
+
+# Wealth VS Pashmina Goats
+Wealth_vs_Pash= ggplot(data, aes(x=wealth_rank, y=Pashmina_goats)) +
+geom_point() +
+geom_smooth(method=lm , color="black", fill="skyblue", se=TRUE) +
+stat_poly_eq(use_label(c("R2", "p")))+
+ylab("No. of Pashmina Goats") + 
+xlab("Wealth Rank of a family")
+
+# Wealth VS ED
+Wealth_vs_ED= ggplot(data, aes(x=wealth_rank, y=ED)) +
+geom_point() +
+geom_smooth(method=lm , color="black", fill="skyblue", se=TRUE) +
+stat_poly_eq(use_label(c("R2", "p")))+
+ylab("No. of educated members in a family") + 
+xlab("Wealth Rank of a family")
+
+ggarrange(Wealth_vs_Pash,Wealth_vs_ED,ncol = 2, nrow = 1)
+```
+Kiang estimates
+```{r}
+# Library
+library(ggplot2)
+library(hrbrthemes)
+
+# Kiang VS wealth rank
+Kiang_vs_wealthrank= ggplot(data, aes(x=wealth_rank, y=data$kiang_exp)) +
+geom_point() +
+geom_smooth(method=lm , color="black", fill="skyblue", se=TRUE) +
+stat_poly_eq(use_label(c("R2", "p")))+
+ylab("Estimated Kiang numbers") + 
+xlab("Wealth rank of a family")
+
+# Kiang VS Total livestock
+Kiang_vs_livestock= ggplot(data, aes(x=data$total_livestock, y=data$kiang_exp)) +
+geom_point() +
+geom_smooth(method=lm , color="black", fill="skyblue", se=TRUE) +
+stat_poly_eq(use_label(c("R2", "p")))+
+ylab("Estimated Kiang numbers") + 
+xlab("Total no. of livestock")
+# Kiang VS TFM
+Kiang_vs_TFM= ggplot(data, aes(x=HH_TFM, y=data$kiang_exp)) +
+geom_point() +
+geom_smooth(method=lm , color="black", fill="skyblue", se=TRUE) +
+stat_poly_eq(use_label(c("R2", "p")))+
+ylab("Estimated Kiang numbers") + 
+xlab("Total members in a family")
+
+# Kiang VS FT
+Kiang_vs_FT= ggplot(data, aes(x=FT, y=data$kiang_exp)) +
+geom_point() +
+geom_smooth(method=lm , color="black", fill="skyblue", se=TRUE) +
+stat_poly_eq(use_label(c("R2", "p")))+
+ylab("Estimated Kiang numbers") + 
+xlab("Full time workers in a family")
+
+ggarrange(Kiang_vs_wealthrank, Kiang_vs_livestock ,Kiang_vs_TFM, Kiang_vs_FT,ncol = 4, nrow = 1)
+```
+```{r}
+library(readxl)
+library(leaps)
+library(tidyverse)
+
+data <- read_excel("E:/GIS/Amit's Social Analytics/Cleaned_dataset.xlsx")
+
+data$`Wealth rank`=as.factor(data$`Wealth rank`)
+
+
+data=data%>%
+  select(`Kiang count estimates_2`,`No. of pashmina goats`, `Wealth rank`, `Comments` )
+data=na.omit(data)
+# load ggplot2
+library(ggplot2)
+library(ggrepel)  # For geom_text_repel
+library(hrbrthemes)  # For theme_ipsum
+
+# Corrected plot code
+plot <- ggplot(data, aes(x = `Kiang count estimates_2`, 
+                             y = `No. of pashmina goats`, 
+                             color = `Wealth rank`)) + 
+  geom_point(size = 4) +
+  #geom_text(aes(label = Comments), hjust = 0, vjust = 1, color = "black", size = 4) +
+  geom_text_repel(aes(label = Comments), color = "black", size =3) +
+  theme_ipsum() +
+  xlab("Kiang Estimates") +
+  ylab("Number of Pashmina Goats") +
+  labs(color = "Wealth Rank:") +
+  scale_color_manual(labels = c("Poor", "Moderately Well-off", "Well-off", "Very Well-off"),
+                     values = c("#BB4444", "lightblue", "#77AADD", "#4477AA")) +
+  theme_gray(base_size = 14)+
+  theme(legend.position="top")+
+  scale_x_continuous(breaks = seq(0, 3500, 300))
+
+# Print the plot
+print(plot)
+
+
+plot
+ggsave("E:/GIS/Amit's Social Analytics/Figures/plot_new.png" , width = 8, height = 6, units = c("in"), dpi = 330)
+```
+```{r}
+plot=ggplot(data, aes(x=(data$`Kiang count estimates_2`), y=data$`No. of pashmina goats`, color=data$`Wealth rank`)) + 
+    geom_point(size=4) +
+    theme_ipsum()+
+   xlab("Kiang Estimates")+
+  ylab("Number of Pashmina Goats")+
+  labs(color="Wealth Rank:")+
+  scale_color_manual(labels = c("Poor", "Moderately Well-off", "Well-off", "Very Well-off"),
+    values=c("#BB4444", "lightblue", "#77AADD", "#4477AA" ))+
+  theme_gray(base_size = 14)
+
+plot
+ggsave("E:/GIS/Amit's Social Analytics/Figures/plot.png" , width = 6, height = 4, units = c("in"), dpi = 330)
+
+library(ggpubr)
+combined_plot=ggarrange(plot, log_plot, ncol = 2, nrow = 1, common.legend = TRUE, legend = c("top"), labels = c("A", "B"))
+
+combined_plot
+ggsave("E:/GIS/Amit's Social Analytics/Figures/combined_plot.png" , width = 8, height = 4, units = c("in"), dpi = 330)
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+Threat_Perception <- tibble(action = c("...... haven't done anything", 
+                                     "...... maintain distance", 
+                                     "...... religious reasons",
+                                     "...... wildlife department",
+                                     "...... have engaged in stoning"), 
+                                    Proportion = c(52, 14, 10, 10, 14))
+
+Threat_Perception$action <- factor(Threat_Perception$action, levels=c('...... have not done anything', 
+                                     '...... maintain distance', 
+                                     '...... religious reasons',
+                                     '...... wildlife department',
+                                     '...... have engaged in stoning'))
+```
+
+```{r}
+library(ggplot2)
+library(gridExtra)
+library(grid)
+library(ggplot2)
+library(lattice)
+
+# create a dataset
+specie <- c(rep("...have not done anything" , 4) , 
+            rep("...maintain distance" , 4) , 
+            rep("...religious reasons" , 4) , 
+            rep("...wildlife department" , 4),
+            rep("...have engaged in stoning" , 4))
+
+condition <- rep(c("Poor" , "Moderately Well-off" , "Well-off", "Very Well-off") , 5)
+value = c(1,4,4,2,0,2,1,0,0,2,0,0,0,1,1,0,1,0,1,1)
+data <- data.frame(specie,condition, value)
+
+#Turn your 'treatment' column into a character vector
+data$specie <- as.character(data$specie)
+#Then turn it back into a factor with the levels in the correct order
+data$specie <- factor(data$specie, levels=unique(data$specie))
+
+data$condition <- factor(data$condition, levels=unique(data$condition))
+
+
+# Stacked + percent
+ggplot(data, aes(fill=condition, y=value, x=specie)) + 
+    geom_bar(position="fill", stat="identity")+
+  coord_flip()+
+  scale_fill_discrete(breaks=c("Very Well-off", "Well-off", "Moderately Well-off", "Poor"))+
+  scale_fill_manual(values=c("#BB4444", "lightblue", "#77AADD", "#4477AA"))+
+  guides(fill = guide_legend(title = "Wealth Rank"))
+
+# Stacked + percent
+p1=ggplot(data, aes(fill=condition, y=value, x=data$specie)) + 
+    geom_bar(position="stack", stat="identity")+
+  coord_flip()+
+  scale_y_continuous(breaks=seq(0,11, by=1))+
+  scale_fill_discrete(breaks=c("Very Well-off", "Well-off", "Moderately Well-off", "Poor"))+
+  scale_fill_manual(values=c("#BB4444", "lightblue", "#77AADD", "#4477AA"))+
+  guides(fill = guide_legend(title = "Wealth Rank"))+
+  ylab("Number of Pasmina Goat")+
+  theme(legend.position = "top",
+    axis.title.x = element_blank(), 
+        axis.title.y = element_blank(), 
+        axis.text.x=element_text(size=12),
+        axis.text.y=element_text(size=12))
+  
+p1
+  
+```
+
+```{r}
+library(readxl)
+Boxplot_figure_data <- read_excel("E:/GIS/Amit's Social Analytics/Boxplot_figure_data.xlsx")
+
+#Turn your 'treatment' column into a character vector
+Boxplot_figure_data$Action <- as.character(Boxplot_figure_data$Action)
+#Then turn it back into a factor with the levels in the correct order
+Boxplot_figure_data$Action <- factor(Boxplot_figure_data$Action, levels=unique(Boxplot_figure_data$Action))
+
+Boxplot_figure_data$Wealth_Rank_Name <- factor(Boxplot_figure_data$Wealth_Rank_Name, levels=unique(Boxplot_figure_data$Wealth_Rank_Name))
+
+library(scales)
+
+p2=ggplot(data = Boxplot_figure_data, aes(x=Action, y=No_of_pashmina_goats, color=Wealth_Rank_Name, fill=Wealth_Rank_Name))+ 
+  geom_boxplot()+
+  #geom_jitter(size=3)+
+  scale_color_discrete(breaks=c("Very Well-off", "Well-off", "Moderately Well-off", "Poor"))+
+  scale_color_manual(values=c("#BB4444", "lightblue", "#77AADD", "#4477AA"))+
+  guides(color = guide_legend(title = "Wealth Rank"))+
+  scale_fill_discrete(breaks=c("Very Well-off", "Well-off", "Moderately Well-off", "Poor"))+
+  scale_fill_manual(values=c("#BB4444", "lightblue", "#77AADD", "#4477AA"))+
+  guides(fill = guide_legend(title = "Wealth Rank"))+
+  ylab("No. of pasmina goats owned by the family")+
+  theme(legend.position = "top",
+        axis.title.x = element_blank(), 
+        axis.title.y = element_text(size = 12),
+        axis.text.x=element_text(size=12),
+        axis.text.y=element_text(size=12))+ 
+    scale_x_discrete(labels = wrap_format(25))
+
+p3=ggplot(data = Boxplot_figure_data, aes(x=Action, y=Kiang_count_estimates, color=Wealth_Rank_Name, fill=Wealth_Rank_Name))+ 
+  geom_boxplot()+
+  #geom_jitter(size=3)+
+  scale_color_discrete(breaks=c("Very Well-off", "Well-off", "Moderately Well-off", "Poor"))+
+  scale_color_manual(values=c("#BB4444", "lightblue", "#77AADD", "#4477AA"))+
+  guides(color = guide_legend(title = "Wealth Rank"))+
+  scale_fill_discrete(breaks=c("Very Well-off", "Well-off", "Moderately Well-off", "Poor"))+
+  scale_fill_manual(values=c("#BB4444", "lightblue", "#77AADD", "#4477AA"))+
+  guides(fill = guide_legend(title = "Wealth Rank"))+
+  ylab("Kiang count estimate by the family")+
+  theme(legend.position = "top",
+        axis.title.x = element_blank(), 
+        axis.title.y = element_text(size = 12),
+        axis.text.x=element_text(size=12),
+        axis.text.y=element_text(size=12))+ 
+    scale_x_discrete(labels = wrap_format(15))
+ #theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+p2
+```
+
+```{r}
+library(ggpubr)
+Fig_x=ggarrange(p1,p3,ncol = 1,  common.legend = TRUE, heights = c(1, 2))
+
+Fig_x
+ggsave("E:/GIS/Amit's Social Analytics/Figures/box_plots.png" , width = 10, height = 8, units = c("in"), dpi = 330)
+
+p1
+ggsave("E:/GIS/Amit's Social Analytics/Figures/row_plot.png" , width = 8, height = 4, units = c("in"), dpi = 330)
+
+p3
+ggsave("E:/GIS/Amit's Social Analytics/Figures/box_plot_p3.png" , width = 6, height = 4, units = c("in"), dpi = 330)
+```

@@ -1,0 +1,101 @@
+---
+title: "Stacked_Area_Plots"
+author: "Rajneesh"
+date: "2024-07-25"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+
+sheep_stat <- read_excel("E:/GIS/Amit's Social Analytics/Cleaned_dataset_2.xlsx", sheet = 9)
+
+sheep_stat_long=sheep_stat%>%
+  select( Year,   `Mean Goat Population`, `Mean Sheep Population`)%>%
+  pivot_longer(!Year, names_to = "Animal", values_to = "count")
+
+library(dplyr)
+left_join_data=sheep_stat%>%
+  select(Year, `Pashmina Production (in Kgs)`, `Cost of Raw Pashmina (in Rs.)`)
+
+
+data <- left_join(sheep_stat_long, left_join_data, by = "Year")
+```
+Plot Code
+```{r}
+library(ggplot2)
+library(dplyr)
+
+# stacked area chart
+ggplot(sheep_stat_long, aes(x=sheep_stat_long$Year, y=sheep_stat_long$count, fill=sheep_stat_long$Animal)) + 
+    geom_area()
+
+str(sheep_stat_long)
+
+# Library
+library(viridis)
+library(hrbrthemes)
+library(scales)
+
+sheep_stat_long$Animal=factor(sheep_stat_long$Animal, levels = c("Mean Goat Population",  "Mean Sheep Population"))
+# Plot
+
+p= ggplot(sheep_stat_long, aes(x=sheep_stat_long$Year, y=sheep_stat_long$count,fill=sheep_stat_long$Animal)) + 
+    geom_area(alpha=0.6 , size=.5, colour="white") +
+   scale_fill_manual(values=c("#BB4444", "lightblue", "#4477AA"))+
+    #scale_fill_viridis(discrete = T) +
+    theme_ipsum()+
+     scale_y_continuous(name = 'Count',
+                     sec.axis = sec_axis(~., name = 'Price of Pashmina')) +
+  scale_x_continuous(breaks=seq(2006, 2024, 1))+
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
+  scale_y_continuous(labels = label_number(suffix = "k", scale = 1e-3))+
+  labs(y = "Count", x = "Year")+
+  theme(legend.position="none")
+p
+#ggsave("E:/GIS/Amit's Social Analytics/Figures/stacked_area.png" , width = 8, height = 4, units = c("in"), dpi = 330)
+```
+
+
+
+```{r}
+library(ggplot2)
+library(hrbrthemes)
+library(scales)
+
+data$Animal=factor(data$Animal, levels = c("Mean Goat Population",  "Mean Sheep Population"))
+
+# Assuming `data` is your dataset and it includes `Year`, `count`, `Animal`, and `Cost of Raw Pashmina (in Rs.)`
+# Replace `data` with the actual name of your dataset
+
+# Define the limits for the primary y-axis (Count) and secondary y-axis (Price of Pashmina)
+primary_y_limits <- c(0, 400000)
+secondary_y_limits <- c(1000, 5000)
+
+# Calculate the scaling factor between the two axes
+scaling_factor <- (primary_y_limits[2] - primary_y_limits[1]) / (secondary_y_limits[2] - secondary_y_limits[1])
+
+p <- ggplot(data, aes(x = Year, y = count, fill = Animal)) + 
+  geom_area(alpha = 0.6, size = 0.5, colour = "white", position = "stack") +
+  scale_fill_manual(values = c("#BB4444", "lightblue", "#4477AA")) +
+  theme_ipsum() +
+  scale_y_continuous(
+    name = 'Count',
+    labels = label_number(suffix = "k", scale = 1e-3),
+    limits = primary_y_limits,
+    sec.axis = sec_axis(~ . / scaling_factor + secondary_y_limits[1], name = 'Price of Pashmina')
+  ) +
+  scale_x_continuous(breaks = seq(2006, 2024, 1)) +
+  theme(
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),legend.position="none" ) +
+  labs(y = "Count", x = "Year") +
+  geom_line(aes(y = (`Cost of Raw Pashmina (in Rs.)` - secondary_y_limits[1]) * scaling_factor), color = "black", size = 0.5, linetype = "dashed") +
+  geom_point(aes(y = (`Cost of Raw Pashmina (in Rs.)` - secondary_y_limits[1]) * scaling_factor), color = "red", size = 1)
+
+print(p)
+
+ggsave("E:/GIS/Amit's Social Analytics/Figures/stacked_area_3.png" , width = 8, height = 4, units = c("in"), dpi = 330)
+
+```
+

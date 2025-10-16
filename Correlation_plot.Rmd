@@ -1,0 +1,140 @@
+---
+title: "Corplot"
+author: "Rajneesh"
+date: "2024-03-20"
+output: html_document
+---
+
+```{r}
+library(readxl)
+
+data <- read_excel("E:/GIS/Amit's Social Analytics/Cleaned_dataset.xlsx")
+
+data_scaled=as.data.frame(scale(data, center = TRUE, scale = TRUE))
+
+data_scaled=na.omit(data_scaled)
+
+```
+
+```{r}
+library(Hmisc)
+
+cor_5 <- rcorr(as.matrix(data_scaled[1:10]), type=c("spearman"))
+M <- cor_5$r
+p.mat <- cor_5$P
+
+ library(corrplot)
+
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+corrplot(M, method="color", col=col(200),  
+        type="upper", order="original", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         # Combine with significance
+         p.mat = p.mat, sig.level = 0.1, pch = 4, insig = c("pch"),
+         # hide correlation coefficient on the principal diagonal
+         diag=FALSE 
+         )
+
+corrplot(M, method="color", col=col(200),  
+         type="upper", order="original", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rot
+         # hide correlation coefficient on the principal diagonal
+         diag=FALSE 
+         )
+
+```
+```{r}
+library(Hmisc)
+library(corrplot) # Ensure corrplot is loaded
+
+png("E:/GIS/Amit's Social Analytics/Figures/cor_plot_2.png", width = 8, height = 6, units = 'in', res = 330)
+# Assuming data_scaled and necessary libraries are loaded
+cor_5 <- rcorr(as.matrix(data_scaled[1:10]), type=c("spearman"))
+M <- cor_5$r
+p_mat <- cor_5$P
+
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+
+# Open a graphical device to plot off-screen
+# This step is necessary if you're running this in a non-interactive environment
+# Otherwise, you can omit this line if running in an interactive R session
+# png(file = NULL) # Uncomment if needed
+
+corrplot(M, method = "color", col = col(200),  
+         type = "upper", order = "original", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col = "darkblue", tl.srt = 45, # Text label color and rotation
+         diag = FALSE)
+
+# Save the plot to an object
+p1 <- recordPlot()
+p1
+#ggsave("E:/GIS/Amit's Social Analytics/Figures/cor_plot.png" , width = 6, height = 6, units = c("in"), dpi = 330)
+dev.off()
+
+```
+
+```{r}
+library(xtable)
+# x is a matrix containing the data
+# method : correlation method. "pearson"" or "spearman"" is supported
+# removeTriangle : remove upper or lower triangle
+# results :  if "html" or "latex"
+  # the results will be displayed in html or latex format
+corstars <-function(x, method=c("pearson", "spearman"), removeTriangle=c("upper", "lower"),
+                     result=c("none", "html", "latex")){
+    #Compute correlation matrix
+    require(Hmisc)
+    x <- as.matrix(x)
+    correlation_matrix<-rcorr(x, type=method[1])
+    R <- correlation_matrix$r # Matrix of correlation coeficients
+    p <- correlation_matrix$P # Matrix of p-value 
+    
+    ## Define notions for significance levels; spacing is important.
+    mystars <- ifelse(p < .01, "*** ", ifelse(p < .05, "**  ", ifelse(p < .1, "*   ", "    ")))
+    
+    ## trunctuate the correlation matrix to two decimal
+    R <- format(round(cbind(rep(-1.11, ncol(x)), R), 2))[,-1]
+    
+    ## build a new matrix that includes the correlations with their apropriate stars
+    Rnew <- matrix(paste(R, mystars, sep=""), ncol=ncol(x))
+    diag(Rnew) <- paste(diag(R), " ", sep="")
+    rownames(Rnew) <- colnames(x)
+    colnames(Rnew) <- paste(colnames(x), "", sep="")
+    
+    ## remove upper triangle of correlation matrix
+    if(removeTriangle[1]=="upper"){
+      Rnew <- as.matrix(Rnew)
+      Rnew[upper.tri(Rnew, diag = TRUE)] <- ""
+      Rnew <- as.data.frame(Rnew)
+    }
+    
+    ## remove lower triangle of correlation matrix
+    else if(removeTriangle[1]=="lower"){
+      Rnew <- as.matrix(Rnew)
+      Rnew[lower.tri(Rnew, diag = TRUE)] <- ""
+      Rnew <- as.data.frame(Rnew)
+    }
+    
+    ## remove last column and return the correlation matrix
+    Rnew <- cbind(Rnew[1:length(Rnew)-1])
+    if (result[1]=="none") return(Rnew)
+    else{
+      if(result[1]=="html") print(xtable(Rnew), type="html")
+      else print(xtable(Rnew), type="latex") 
+    }
+}
+```
+
+```{r}
+correlation_plot=corstars(data_scaled[1:10], method = "spearman")
+correlation_plot
+df=correlation_plot[-1,]
+
+library(gridExtra)
+png("test.png", height = 50*nrow(df), width = 200*ncol(df))
+grid.table(df)
+dev.off()
+```
